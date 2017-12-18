@@ -8,8 +8,8 @@ function [J grad] = nnCostFunction(nn_params, ...
 %   [J grad] = NNCOSTFUNCTON(nn_params, hidden_layer_size, num_labels, ...
 %   X, y, lambda) computes the cost and gradient of the neural network. The
 %   parameters for the neural network are "unrolled" into the vector
-%   nn_params and need to be converted back into the weight matrices. 
-% 
+%   nn_params and need to be converted back into the weight matrices.
+%
 %   The returned parameter grad should be a "unrolled" vector of the
 %   partial derivatives of the neural network.
 %
@@ -24,8 +24,8 @@ Theta2 = reshape(nn_params((1 + (hidden_layer_size * (input_layer_size + 1))):en
 
 % Setup some useful variables
 m = size(X, 1);
-         
-% You need to return the following variables correctly 
+
+% You need to return the following variables correctly
 J = 0;
 Theta1_grad = zeros(size(Theta1));
 Theta2_grad = zeros(size(Theta2));
@@ -46,12 +46,12 @@ Theta2_grad = zeros(size(Theta2));
 %         that your implementation is correct by running checkNNGradients
 %
 %         Note: The vector y passed into the function is a vector of labels
-%               containing values from 1..K. You need to map this vector into a 
+%               containing values from 1..K. You need to map this vector into a
 %               binary vector of 1's and 0's to be used with the neural network
 %               cost function.
 %
 %         Hint: We recommend implementing backpropagation using a for-loop
-%               over the training examples if you are implementing it for the 
+%               over the training examples if you are implementing it for the
 %               first time.
 %
 % Part 3: Implement regularization with the cost function and gradients.
@@ -62,20 +62,42 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+I = eye(num_labels);
+Y = zeros(m, num_labels);
+for i = 1:m
+  Y(i, :) = I(y(i), :);
+endfor
+
+A1 = [ones(m, 1) X];
+Z2 = A1 * Theta1';
+A2 = [ones(size(Z2, 1), 1) sigmoid(Z2)];
+Z3 = A2 * Theta2';
+H = A3 = sigmoid(Z3);
 
 
+skip_theta1_zero = Theta1(:, 2:end);
+skip_theta2_zero = Theta2(:, 2:end);
+
+regularization = (lambda/(2 * m)) * (sum(sum(skip_theta1_zero .^ 2)) + sum(sum(skip_theta2_zero .^ 2)));
+
+J = (-1 / m) * sum(sum(Y .* log(H) + (1 - Y) .* log(1 - H)));
+J = J + regularization;
 
 
+Sigma3 = A3 - Y;
+Z2_with_ones_column = [ones(size(Z2, 1), 1) Z2];
+Sigma2 = (Sigma3 * Theta2 .* sigmoidGradient(Z2_with_ones_column));
+Sigma2_skip_zero = Sigma2(:, 2:end);
 
 
+Delta_1 = Sigma2_skip_zero' * A1;
+Delta_2 = Sigma3' * A2;
 
 
-
-
-
-
-
-
+skip_theta1_zero_and_set_to_zero = [zeros(size(Theta1,1), 1) skip_theta1_zero];
+skip_theta2_zero_and_set_to_zero = [zeros(size(Theta1,1), 1) skip_theta2_zero];
+Theta1_grad = Delta_1 ./ m + (lambda / m) * skip_theta1_zero_and_set_to_zero;
+Theta2_grad = Delta_2 ./ m + (lambda / m) * skip_theta2_zero_and_set_to_zero;
 
 
 
